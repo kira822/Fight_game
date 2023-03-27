@@ -1,0 +1,297 @@
+using System.Collections.Specialized;
+using System.Reflection.Metadata.Ecma335;
+using System.Security.Cryptography;
+
+
+Player player = new Player();
+
+Enemy enemyGoblin = new Enemy("Гоблин", 20);
+Enemy enemySkilet = new Enemy("Скелет", 15);
+Enemy enemyOrc = new Enemy("Орк", 20);
+Enemy enemy = new Enemy("***", 1);
+
+Weapon sword = new Weapon("Меч", 4);
+Weapon spear = new Weapon("Копьё", 4);
+Weapon hammer = new Weapon("Молот", 3);
+
+Random rand = new Random();
+
+Console.WriteLine("Выберите оружие:\n" +
+                  "1. Меч, 3-5 урона\n" +
+                  "2. Копьё, 1-7 урона, шанс промаха 20%\n" +
+                  "3. Молот, 2-4 урона, шанс оглушить врага 25%\n" +
+                  "-------------------------------------------");
+Console.Write("=>");
+int weaponChoose = Convert.ToInt32(Console.ReadLine());
+
+int GetRandomValue()
+{
+    int number = rand.Next(-20, 100);
+    return number;
+}
+
+int randomValue = GetRandomValue();
+
+switch (weaponChoose)
+{
+    case 1:
+        player.Damage = sword.WeaponDamage;
+        break;
+
+        case 2:
+        player.Damage = spear.WeaponDamage;
+        break;
+
+    case 3:
+        player.Damage = hammer.WeaponDamage;
+        break;
+}
+
+Console.WriteLine("1.Атака   2.Лечение   3.Отдых");
+
+
+
+Game();
+
+void Game()
+{
+    while (enemy.EnemyHealth > 0 && player.Health > 0)
+    {
+        int bonusDamage;
+        int randomChance = rand.Next(1, 4);
+        int randomCheck = rand.Next(1, 4);
+        int randomEvent = 0;
+
+            if (weaponChoose == 2 && randomChance == randomCheck) randomEvent = 2;   
+            else if(weaponChoose == 3 && randomChance == randomCheck) randomEvent = 3;
+
+        Console.WriteLine("--------------------------");
+        Console.Write("=>");
+        int consoleValue = Convert.ToInt32(Console.ReadLine());
+
+        switch (consoleValue)
+        {
+            case 1:
+                DamageGenerator();
+                PrintInfo();
+                DefeatCheck();
+                break;
+
+            case 2:
+                Heal();
+                PrintInfo();
+                break;
+
+            case 3:
+                Stamina();
+                PrintInfo();
+                DefeatCheck();
+                break;
+        }
+
+        void DamageGenerator()
+        {
+            if (randomValue > 30)
+            {
+                enemy.EnemyDamage = rand.Next(1, 4);
+                enemy = enemyGoblin;
+            }
+
+            else if (randomValue < 30 && randomValue > 0)
+            {
+                enemySkilet.EnemyDamage = rand.Next(3, 5);
+                enemy = enemySkilet;
+            }
+
+            else if (randomValue < 0)
+            {
+                enemyOrc.EnemyDamage = rand.Next(4, 6);
+                enemy = enemyOrc;
+            }
+
+            switch (weaponChoose)
+            {
+                case 1:
+                    player.Damage = sword.WeaponDamage;
+                    bonusDamage = rand.Next(-1, 2);
+                    player.Damage += bonusDamage;          
+                    break;
+
+                case 2:
+                    player.Damage = spear.WeaponDamage;
+                    bonusDamage = rand.Next(-3, 3);
+                    player.Damage += bonusDamage;
+                    break;
+
+                case 3:
+                    player.Damage = hammer.WeaponDamage;
+                    bonusDamage = rand.Next(-1, 2);
+                    player.Damage += bonusDamage;
+                    break;
+            }
+
+            Battle();
+        }
+
+        void Battle()
+        {
+            if (player.Stamina == 0)
+            {
+                Console.WriteLine("У вас кончились силы");
+            }
+
+            if (player.Stamina > 0)
+            {
+                MissOrStunCheck();
+                player.Stamina -= 2;
+
+                if (randomEvent != 2)
+                {
+                    enemy.EnemyHealth -= player.Damage;
+                    Console.WriteLine($"Вы бьете {enemy.EnemyName} и наносите {player.Damage} урона");
+                }
+            }
+
+            if (enemy.EnemyHealth > 0 && randomEvent != 3 )
+            {
+                DamageFromEnemy();
+            }
+        }
+        
+        void MissOrStunCheck()
+        {
+            if (weaponChoose == 3 && randomEvent == 3)
+            {
+                Console.WriteLine($"Вы оглушили {enemy.EnemyName}");
+            }
+
+            else if (weaponChoose == 2 && randomEvent == 2)
+            {
+                Console.WriteLine($"Вы промахнулись ");
+            }
+        }
+
+        void PrintInfo()
+        {
+            if (player.Health < 0) player.Health = 0;
+            if (enemy.EnemyHealth < 0) enemy.EnemyHealth = 0;
+            Console.WriteLine($"Игрок - Здоровье: {player.Health}, Выносливость: {player.Stamina}");
+            Console.WriteLine($"{enemy.EnemyName} - Здоровье: {enemy.EnemyHealth}");
+        }
+
+        void DefeatCheck()
+        {
+            if (enemy.EnemyHealth <= 0)
+            {
+                Console.WriteLine($"{enemy.EnemyName} погибает " +
+                                  $"\nВы победили");
+            }
+
+            else if (player.Health <= 0)
+            {
+                Console.WriteLine($"{enemy.EnemyName} наносит вам фатальное ранение " +
+                                  $"\nВы проиграли");
+            }
+        }
+
+        void DamageFromEnemy ()
+        {
+            if(consoleValue == 3)
+            {
+                player.Health --;
+                Console.WriteLine($"{enemy.EnemyName} пытается пробить ваш блок и наносит 1 уронa");
+            }
+
+            else
+            {
+                player.Health -= enemy.EnemyDamage;
+                Console.WriteLine($"{enemy.EnemyName} бьет вас и наносит {enemy.EnemyDamage} урона");
+            }
+        }
+       
+        void Heal()
+        {
+            if (player.HealPotions == 0)
+            {
+                Console.WriteLine("Вы потратили все зелья лечения");
+            }
+
+            else
+            {
+                if (player.Health < 10 && player.HealPotions > 0)
+                {
+                    player.HealPotions--;
+                    player.Health += 3;
+
+                    if (player.Health > 10)
+                    {
+                        player.Health = 10; 
+                    }
+
+                    Console.WriteLine($"Вы восстанавливаете здоровье до {player.Health} hp" +
+                                      $"\nЗелий лечения осталось: {player.HealPotions}");
+                }
+
+                else Console.WriteLine("Вы полностью здоровы");
+            }
+        }
+
+        void Stamina()
+        {            
+            if (player.Stamina < 10)
+            {
+                player.Stamina += 2;
+                Console.WriteLine($"Вы переходите в оборону и восстанавливаете силы до {player.Stamina} очков");
+                DamageFromEnemy();
+            }
+
+            else Console.WriteLine("Ваша выносливость на максимуме");
+        }
+    }
+}
+
+
+class Player
+{
+    public int Health = 12;
+    public int Stamina = 12;
+    public int HealPotions = 3;
+    public int Damage;   
+}
+
+class Enemy
+{
+    public int EnemyHealth;
+    public int EnemyDamage;
+    public string EnemyName;
+
+    public Enemy(string enemyName,int enemyHealth)
+    {
+        EnemyName = enemyName;
+        EnemyHealth = enemyHealth;
+    }
+}
+
+class Weapon
+{
+    public string WeaponName;
+    public int WeaponDamage;
+
+    public Weapon(string weaponName, int weaponDamage)
+    {
+        WeaponName = weaponName;
+        WeaponDamage = weaponDamage;
+    }   
+}
+
+
+class EliteEnemy : Enemy
+{
+    public EliteEnemy(string enemyName, int enemyHealth)
+   : base (enemyName,enemyHealth)
+    {
+
+    }
+}
+
+
